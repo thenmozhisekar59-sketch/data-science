@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="UTF-8"?><sqlb_project><db path="sql ass.db" readonly="0" foreign_keys="1" case_sensitive_like="0" temp_store="0" wal_autocheckpoint="1000" synchronous="2"/><attached/><window><main_tabs open="structure browser pragmas query" current="3"/></window><tab_structure><column_width id="0" width="300"/><column_width id="1" width="0"/><column_width id="2" width="100"/><column_width id="3" width="1116"/><column_width id="4" width="0"/><expanded_item id="0" parent="1"/><expanded_item id="1" parent="1"/><expanded_item id="2" parent="1"/><expanded_item id="3" parent="1"/></tab_structure><tab_browse><table title="carsales" custom_title="0" dock_id="1" table="4,8:maincarsales"/><dock_state state="000000ff00000000fd0000000100000002000005f4000002aefc0100000001fb000000160064006f0063006b00420072006f00770073006500310100000000000005f40000012400ffffff000002580000000000000004000000040000000800000008fc00000000"/><default_encoding codec=""/><browse_table_settings><table schema="main" name="carsales" show_row_id="0" encoding="" plot_x_axis="" unlock_view_pk="_rowid_" freeze_columns="0"><sort/><column_widths><column index="1" value="83"/><column index="2" value="85"/><column index="3" value="74"/><column index="4" value="63"/><column index="5" value="129"/><column index="6" value="54"/><column index="7" value="54"/></column_widths><filter_values/><conditional_formats/><row_id_formats/><display_formats/><hidden_columns/><plot_y_axes/><global_filter/></table></browse_table_settings></tab_browse><tab_sql><sql name="SQL 1*">SELECT * from carsales;
+
+
+---  1) Write a query to get all petrol cars ordered by price (highest price).
+
+SELECT * from carsales WHERE Fuel_type = 'Petrol' ORDER by price DESC;
+
+
+---  2) Write a query to get cars Manufactur after 2015.
+
+SELECT * from carsales WHERE Year_of_manufacture &gt; 2015;
+
+---  3) Write a query to find average mileage of porsche cars.
+
+SELECT avg(mileage) from carsales where Manufacturer = 'Porsche' 
+
+---  4) How do you find most expensive car from your table.
+
+SELECT * from carsales order by price DESC LIMIT 1;
+
+---  5) List cars Manufactured between 2015 and 2020, sorted by year.
+
+SELECT Manufacturer,Year_of_manufacture,price from carsales WHERE Year_of_manufacture BETWEEN 2015 and 2020 order by Year_of_manufacture ASC;
+
+---  6) Find Manufacture that have produced more than 5 cars and display their Manufacture year and total count.
+
+SELECT Manufacturer,Year_of_manufacture, count(*) FROM carsales GROUP by Manufacturer HAVING count(*) &gt; 5 ;
+
+---  7) Find all cars whose name starts with 'T' and are priced below 50,000.
+
+SELECT * from carsales WHERE Manufacturer like 'T%' and price &lt; 50000;
+
+---  8) Find average price of cars each Manufacturer.
+
+SELECT Manufacturer,avg(price) from carsales GROUP by Manufacturer;
+
+---  9) show the minimum and maximum price per Manufacturer.
+
+SELECT Manufacturer, min(price) as min_price, max(price) as max_price from carsales GROUP by Manufacturer;
+
+---  10) Show car categorized as cheap, mid, expensive per year with counts.
+
+SELECT Manufacturer,Year_of_manufacture,
+     CASE
+	  WHEN price &lt; 30000 THEN 'cheap'
+	  WHEN price BETWEEN 30000 and 60000 THEN 'mid'
+	  ELSE 'expensive' END as price_category,
+	  count(*) as total from carsales group by Year_of_manufacture, price_category;
+
+
+	  
+	  
+	  
+	  
+	  
+---SUB-QUERY  
+	  
+---  1) Find cars priced higher than the average price of all cars.
+
+SELECT * from carsales 
+WHERE price &gt; (SELECT avg(price) from carsales);
+
+---  2) Find the cars whose Manufacturing year is older then the oldest BMW model.
+
+SELECT * FROM carsales 
+WHERE Year_of_manufacture &lt; (select min(year_of_manufacture) from carsales where Manufacturer = 'BMW');
+
+	 
+--- 3) Find all fuel types that have at least one car with mileage above the overall average mileage.
+
+SELECT DISTINCT Manufacturer,Fuel_type
+from carsales WHERE Mileage &gt; (SELECT avg(mileage) from carsales);
+	  
+
+--- 4) Find cars that are not the most expensive within their Manufacturer.
+
+SELECT * from carsales c1
+WHERE Price &lt;&gt; (select max(price) from carsales WHERE Manufacturer = c1.Manufacturer);
+
+
+--- 5)Get cars that are among the top 3 most expensive cars for each fuel type.
+
+select c1.* from carsales c1
+WHERE (SELECT count(*) from carsales c2 
+WHERE c2.Fuel_type = c1.Fuel_type and c2.Price &gt; c1.price) &lt; 3; 
+
+
+--- 6) Find the cheapest car for each Manufacturer.
+
+SELECT * from carsales c1
+where price = (SELECT min(price) from carsales WHERE Manufacturer = c1.Manufacturer);
+
+
+--- 7) Find cars whose mileage is below the average mileage for their Fuel type.
+
+SELECT * from carsales c1
+where Mileage &lt; (SELECT avg(mileage) from carsales WHERE Fuel_type = c1.Fuel_type);
+
+
+--- 8) list Manufacturer whose price is equal to the maximum in prosche.
+
+SELECT * from carsales
+WHERE price &gt; (SELECT max(price) from carsales WHERE Manufacturer = 'Porsche');
+
+
+--- 9) Find car whose price is higher than the most expensive diesel car.
+
+select * from carsales
+where price  &gt; (SELECT max(price) from carsales WHERE Fuel_type = 'Diesel');
+
+--- 10) Find cars whose mileage is higher than all hybrid cars.
+
+SELECT * from carsales 
+WHERE Mileage &gt;  (SELECT Mileage from carsales WHERE Fuel_type = 'Hybrid'); 
+
+
+
+
+--- WINDOWS FUNCTION
+
+---  1) Get the second most expensive car overall.
+
+SELECT * from 
+(select*, row_number() OVER (ORDER by price DESC) as rn from carsales ) as ranked WHERE rn = 2;
+
+ ---  2) car with the largest engine per fuel type (top1)
+ 
+ select Fuel_type,Manufacturer, model, Engine_size,rnk
+ FROM(SELECT Fuel_type,Manufacturer, model, Engine_size,
+ rank() over(PARTITION by Fuel_type ORDER by Engine_size DESC) as rnk
+from carsales ) as ranked WHERE rnk = 1; 
+ 
+
+ ---  3) Find each car's price difference compared to the previous car (ordered by price) within each Manufacturer.
+ 
+ SELECT Manufacturer,Model,Price,
+ price - lag(price) over (PARTITION by Manufacturer order by price) as price_diff from carsales;
+
+
+---  4) Find the price of the cheapest car and show it alongside every car of that Manufacturer.
+
+SELECT Manufacturer,Model, Price,
+first_value (price) over(PARTITION by Manufacturer ORDER by price ASC) as cheapest_car from carsales;
+
+
+---  5) show the total price of all cars of the same Manufacturer.
+
+SELECT Manufacturer,model,Price,
+sum(price) over (PARTITION by Manufacturer) as total_price from carsales;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</sql><current_tab id="0"/></tab_sql></sqlb_project>
